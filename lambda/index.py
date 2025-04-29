@@ -2,6 +2,8 @@
 import json
 import os
 import boto3
+import urllib.request
+import json
 import re  # 正規表現モジュールをインポート
 from botocore.exceptions import ClientError
 
@@ -17,18 +19,39 @@ def extract_region_from_arn(arn):
 # グローバル変数としてクライアントを初期化（初期値）
 bedrock_client = None
 
+'''
+# feat: Replace model IDs with functions that send requests to the inference API.
 # モデルID
 MODEL_ID = os.environ.get("MODEL_ID", "us.amazon.nova-lite-v1:0")
+'''
+# feat: Replace model IDs with functions that send requests to the inference API.
+def call_inference_api(prompt):
+    url = "https://api.example.com/v1/inference"  # ←実際のAPIエンドポイントに書き換えてください
+    headers = {
+        "Content-Type": "application/json",
+        # "Authorization": "Bearer <API-KEY>"  #アプリケーションを公開するときは必要だと思われる
+    }
+    data = {"prompt": prompt}
+    json_data = json.dumps(data).encode("utf-8")
+    req = urllib.request.Request(url, data=json_data, headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(req) as res:
+            result = res.read()
+            return json.loads(result)
+    except urllib.error.HTTPError as e:
+        # エラー処理（API側でエラーが返った場合）
+        return {"error": e.reason, "status": e.code}
 
 def lambda_handler(event, context):
     try:
         # コンテキストから実行リージョンを取得し、クライアントを初期化
-        global bedrock_client
+        #global bedrock_client
+        """
         if bedrock_client is None:
             region = extract_region_from_arn(context.invoked_function_arn)
             bedrock_client = boto3.client('bedrock-runtime', region_name=region)
             print(f"Initialized Bedrock client in region: {region}")
-        
+        """
         print("Received event:", json.dumps(event))
         
         # Cognitoで認証されたユーザー情報を取得
@@ -43,7 +66,7 @@ def lambda_handler(event, context):
         conversation_history = body.get('conversationHistory', [])
         
         print("Processing message:", message)
-        print("Using model:", MODEL_ID)
+        #print("Using model:", MODEL_ID)
         
         # 会話履歴を使用
         messages = conversation_history.copy()
@@ -54,6 +77,7 @@ def lambda_handler(event, context):
             "content": message
         })
         
+        """
         # Nova Liteモデル用のリクエストペイロードを構築
         # 会話履歴を含める
         bedrock_messages = []
@@ -68,10 +92,10 @@ def lambda_handler(event, context):
                     "role": "assistant", 
                     "content": [{"text": msg["content"]}]
                 })
-        
+        """
         # invoke_model用のリクエストペイロード
         request_payload = {
-            "messages": bedrock_messages,
+            "messages": messages,
             "inferenceConfig": {
                 "maxTokens": 512,
                 "stopSequences": [],
@@ -80,8 +104,8 @@ def lambda_handler(event, context):
             }
         }
         
-        print("Calling Bedrock invoke_model API with payload:", json.dumps(request_payload))
-        
+        print("Calling Fast API with payload:", json.dumps(request_payload))
+        """
         # invoke_model APIを呼び出し
         response = bedrock_client.invoke_model(
             modelId=MODEL_ID,
@@ -91,6 +115,11 @@ def lambda_handler(event, context):
         
         # レスポンスを解析
         response_body = json.loads(response['body'].read())
+        """
+
+        
+        api_response = call_inference_api(request_payload)
+        response_body = api_response
         print("Bedrock response:", json.dumps(response_body, default=str))
         
         # 応答の検証
