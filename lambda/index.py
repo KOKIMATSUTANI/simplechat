@@ -26,12 +26,18 @@ MODEL_ID = os.environ.get("MODEL_ID", "us.amazon.nova-lite-v1:0")
 '''
 # feat: Replace model IDs with functions that send requests to the inference API.
 def call_inference_api(prompt):
-    url = "https://4768-34-125-171-141.ngrok-free.app/docs#/default/generate_simple_generate_post"  # ←FastAPIエンドポイント
+    url = "https://4768-34-125-171-141.ngrok-free.app/generate"  # ←FastAPIエンドポイント
     headers = {
         "Content-Type": "application/json",
         # "Authorization": "Bearer <API-KEY>"  #アプリケーションを公開するときは必要だと思われる
     }
-    data = {"prompt": prompt}
+    data = {
+                "prompt": str(prompt),
+                    "max_new_tokens": 512,
+                        "do_sample": True,
+                            "temperature": 0.7,
+                                "top_p": 0.9
+                                }
     json_data = json.dumps(data).encode("utf-8")
     req = urllib.request.Request(url, data=json_data, headers=headers, method="POST")
     try:
@@ -95,7 +101,7 @@ def lambda_handler(event, context):
         """
         # invoke_model用のリクエストペイロード
         request_payload = {
-            "messages": messages,
+            "messages": generated_output,
             "inferenceConfig": {
                 "maxTokens": 512,
                 "stopSequences": [],
