@@ -26,7 +26,7 @@ MODEL_ID = os.environ.get("MODEL_ID", "us.amazon.nova-lite-v1:0")
 '''
 # feat: Replace model IDs with functions that send requests to the inference API.
 def call_inference_api(prompt):
-    url = "https://api.example.com/v1/inference"  # ←FastAPIエンドポイント
+    url = "https://4768-34-125-171-141.ngrok-free.app/docs#/default/generate_simple_generate_post"  # ←FastAPIエンドポイント
     headers = {
         "Content-Type": "application/json",
         # "Authorization": "Bearer <API-KEY>"  #アプリケーションを公開するときは必要だと思われる
